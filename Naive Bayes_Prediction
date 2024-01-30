@@ -1,0 +1,155 @@
+// Load dữ liệu đàu vào
+            
+            string fn = "D:/Learning C#/data2.txt";
+            int nx = 4;  // Số thuộc tính một mẫu dữ liệu
+            int nc = 2;  // Số Lớp 
+            int N = 14;  // Số mẫu data trong dữ liệu học tập
+
+
+            string[][] data = LoadData(fn, N, nx + 1, ',');
+
+
+            // Đọc data training
+            
+            for (int i = 0; i < 10; ++i)
+            {
+                Console.Write("[" + i + "] ");
+                for (int j = 0; j < nx + 1; ++j)
+                {
+                    Console.Write(data[i][j] + " ");
+                }
+                Console.WriteLine("");
+            }
+            //Dữ liệu cần dự đoán 
+            int[][] jointCts = MatrixInt(nx, nc);
+            int[] yCts = new int[nc];
+            string[] X = new string[] { "Trẻ", "Trung Bình", "Có","Cao" };
+
+
+            Console.WriteLine("Item to classify: ");
+  
+            for (int i = 0; i < nx; ++i)
+                Console.Write(X[i] + " ");
+            Console.WriteLine("\n");
+
+
+            
+            for (int i = 0; i < N; ++i)
+            {
+                int y = int.Parse(data[i][nx]);
+                ++yCts[y];
+                for (int j = 0; j < nx; ++j)
+                {
+                    if (data[i][j] == X[j])
+                        ++jointCts[j][y];
+                }
+            }
+  // Laplacian smoothing
+
+            for (int i = 0; i < nx; ++i)
+                for (int j = 0; j < nc; ++j)
+                    ++jointCts[i][j];
+            Console.WriteLine("Joint counts: ");
+            
+            
+            for (int i = 0; i < nx; ++i)
+            {
+                for (int j = 0; j < nc; ++j)
+                {
+                    Console.Write(jointCts[i][j] + " ");
+                }
+                Console.WriteLine("");
+            }
+            Console.WriteLine("\n Class counts: ");
+            
+            
+            for (int k = 0; k < nc; ++k)
+                Console.Write(yCts[k] + " ");
+            Console.WriteLine("\n");
+            // Compute evidence terms
+            
+            
+            double[] eTerms = new double[nc];
+            for (int k = 0; k < nc; ++k)
+            {
+                double v = 1.0;
+                for (int j = 0; j < nx; ++j)
+                {
+                    v *= (double)(jointCts[j][k]) / (yCts[k] + nx);
+                }
+                v *= (double)(yCts[k]) / N;
+                eTerms[k] = v;
+            }
+            
+            Console.WriteLine("Evidence terms:");
+            for (int k = 0; k < nc; ++k)
+                Console.Write(eTerms[k].ToString("F4") + " ");
+            Console.WriteLine("\n");
+            double evidence = 0.0;
+            for (int k = 0; k < nc; ++k)
+                evidence += eTerms[k];
+            double[] probs = new double[nc];
+            for (int k = 0; k < nc; ++k)
+                probs[k] = eTerms[k] / evidence;
+            Console.WriteLine("Probabilities: ");
+            
+            for (int k = 0; k < nc; ++k)
+                Console.Write(probs[k].ToString("F4") + " ");
+            Console.WriteLine("\n");
+            int pc = ArgMax(probs);
+            Console.WriteLine("Predicted class: ");
+            Console.WriteLine(pc);
+            Console.WriteLine("\nEnd naive Bayes ");
+            Console.ReadLine();
+
+
+  static string[][] MatrixString(int rows, int cols)
+        {
+            string[][] result = new string[rows][];
+            for (int i = 0; i < rows; ++i)
+                result[i] = new string[cols];
+            return result;
+        }
+        
+        static int[][] MatrixInt(int rows, int cols)
+        {
+            int[][] result = new int[rows][];
+            for (int i = 0; i < rows; ++i)
+                result[i] = new int[cols];
+            return result;
+        }
+        
+        static string[][] LoadData(string fn, int rows,
+        int cols, char delimit)
+        {
+            string[][] result = MatrixString(rows, cols);
+            FileStream ifs = new FileStream(fn, FileMode.Open);
+            StreamReader sr = new StreamReader(ifs);
+            string[] tokens = null;
+            string line = null;
+            int i = 0;
+            while ((line = sr.ReadLine()) != null)
+            {
+                tokens = line.Split(delimit);
+                for (int j = 0; j < cols; ++j)
+                    result[i][j] = tokens[j];
+                ++i;
+            }
+            sr.Close(); ifs.Close();
+            return result;
+        }
+        
+        static int ArgMax(double[] vector)
+        {
+            int result = 0;
+            double maxV = vector[0];
+            for (int i = 0; i < vector.Length; ++i)
+            {
+                if (vector[i] > maxV)
+                {
+                    maxV = vector[i];
+                    result = i;
+                }
+            }
+            return result;
+        }
